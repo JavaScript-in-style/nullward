@@ -1,13 +1,26 @@
 import { RANKS, JWT_SECRET } from "./_config.js";
 
-// Minimal JWT signing — no external deps needed on Vercel
-function base64url(str) {
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+// Encode a string to base64url
+function base64urlFromString(str) {
+  return Buffer.from(str, "utf8")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
+// Encode an ArrayBuffer to base64url
+function base64urlFromBuffer(buf) {
+  return Buffer.from(buf)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 }
 
 async function signJWT(payload) {
-  const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const body = base64url(JSON.stringify(payload));
+  const header = base64urlFromString(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body = base64urlFromString(JSON.stringify(payload));
   const data = `${header}.${body}`;
   const key = await crypto.subtle.importKey(
     "raw",
@@ -17,8 +30,7 @@ async function signJWT(payload) {
     ["sign"]
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  const sigB64 = base64url(String.fromCharCode(...new Uint8Array(sig)));
-  return `${data}.${sigB64}`;
+  return `${data}.${base64urlFromBuffer(sig)}`;
 }
 
 export default async function handler(req, res) {
