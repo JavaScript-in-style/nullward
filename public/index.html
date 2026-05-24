@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROJECT NULLWARD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #0e0e10;
+      --border: rgba(255,255,255,0.06);
+      --border-mid: rgba(255,255,255,0.12);
+      --text-primary: #c8c8cc;
+      --text-secondary: #5a5a60;
+      --text-tertiary: #2e2e33;
+      --accent: #8a7a6a;
+      --accent-dim: #3a342e;
+      --red: #7a2a2a;
+      --red-text: #c87070;
+      --mono: 'Share Tech Mono', monospace;
+      --serif: 'Libre Baskerville', serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Subtle scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Header */
+    header {
+      padding: 28px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .org-id {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--text-secondary);
+    }
+
+    .org-id span {
+      color: var(--text-tertiary);
+      margin-right: 10px;
+    }
+
+    nav {
+      display: flex;
+      gap: 32px;
+    }
+
+    nav a {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    nav a:hover { color: var(--text-secondary); }
+    nav a.active { color: var(--text-secondary); }
+
+    /* Main stage */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      position: relative;
+    }
+
+    .classification-banner {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: var(--text-tertiary);
+      margin-bottom: 60px;
+      border: 1px solid var(--border);
+      padding: 6px 18px;
+    }
+
+    /* The sigil — large redacted block */
+    .sigil {
+      width: 180px;
+      height: 180px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 60px;
+      position: relative;
+      cursor: default;
+    }
+
+    .sigil::before, .sigil::after {
+      content: '';
+      position: absolute;
+      background: var(--border);
+    }
+
+    .sigil::before {
+      width: 1px;
+      height: 100%;
+      left: 50%;
+    }
+
+    .sigil::after {
+      width: 100%;
+      height: 1px;
+      top: 50%;
+    }
+
+    .sigil-inner {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--text-tertiary);
+      text-align: center;
+      line-height: 2;
+      z-index: 1;
+    }
+
+    .sigil.unlocked {
+      border-color: var(--accent-dim);
+      animation: sigilPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes sigilPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(138,122,106,0); }
+      50% { box-shadow: 0 0 20px 2px rgba(138,122,106,0.08); }
+    }
+
+    /* Input area */
+    .input-container {
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--text-tertiary);
+      margin-bottom: 10px;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border-mid);
+      padding-bottom: 10px;
+      gap: 12px;
+    }
+
+    .input-prefix {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .typed-display {
+      flex: 1;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      min-height: 20px;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background: var(--text-secondary);
+      vertical-align: middle;
+      margin-left: 1px;
+      animation: blink 1.1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .input-hint {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      margin-top: 10px;
+      height: 14px;
+      transition: color 0.3s;
+    }
+
+    .input-hint.error {
+      color: var(--red-text);
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* Unlock response panel */
+    .unlock-panel {
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid var(--accent-dim);
+      padding: 20px 24px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.5s, transform 0.5s;
+      pointer-events: none;
+      margin-top: 8px;
+    }
+
+    .unlock-panel.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    .unlock-tier {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .unlock-designation {
+      font-size: 18px;
+      letter-spacing: 0.08em;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .unlock-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-family: var(--serif);
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+
+    .unlock-btn {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      padding: 8px 20px;
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .unlock-btn:hover {
+      background: rgba(138,122,106,0.06);
+      border-color: var(--accent);
+    }
+
+    /* Footer */
+    footer {
+      padding: 20px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer span {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--text-tertiary);
+    }
+
+    /* Glitch animation on error */
+    .sigil.glitch {
+      animation: glitch 0.4s ease;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 1px); filter: hue-rotate(90deg); }
+      40% { transform: translate(2px, -1px); }
+      60% { transform: translate(-1px, 2px); }
+      80% { transform: translate(1px, -1px); filter: hue-rotate(0deg); }
+      100% { transform: translate(0); }
+    }
+
+    /* Loading state */
+    .verifying {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: var(--text-tertiary);
+      margin-top: 10px;
+      height: 14px;
+    }
+
+    .dot-pulse::after {
+      content: '';
+      animation: dotPulse 1.2s infinite;
+    }
+
+    @keyframes dotPulse {
+      0% { content: ''; }
+      33% { content: '.'; }
+      66% { content: '..'; }
+      100% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="org-id"><span>REF:</span>PROJECT NULLWARD</div>
+    <nav>
+      <a href="index.html" class="active">ENTRY</a>
+      <a href="cipher/index.html">CIPHER</a>
+      <a href="vault/index.html">VAULT</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="classification-banner">RESTRICTED — UNAUTHORIZED ACCESS LOGGED</div>
+
+    <div class="sigil" id="sigil">
+      <div class="sigil-inner">
+        NW<br>██<br>07
+      </div>
+    </div>
+
+    <div class="input-container">
+      <div class="input-label">CLEARANCE PASSPHRASE</div>
+      <div class="input-row">
+        <span class="input-prefix">&gt;_</span>
+        <div class="typed-display" id="typed-display"><span class="cursor"></span></div>
+      </div>
+      <div class="input-hint" id="input-hint">TYPE TO BEGIN — NO FIELD TO CLICK</div>
+    </div>
+
+    <div class="unlock-panel" id="unlock-panel">
+      <div class="unlock-tier" id="unlock-tier"></div>
+      <div class="unlock-designation" id="unlock-designation"></div>
+      <div class="unlock-desc" id="unlock-desc"></div>
+      <button class="unlock-btn" id="unlock-btn" onclick="goToVault()">PROCEED TO VAULT →</button>
+    </div>
+  </main>
+
+  <footer>
+    <span>NULLWARD CLEARANCE PORTAL</span>
+    <span id="footer-status">AWAITING INPUT</span>
+  </footer>
+
+  <script>
+    let typed = '';
+    let verifying = false;
+    let unlocked = false;
+    let errorTimeout = null;
+
+    const display = document.getElementById('typed-display');
+    const hint = document.getElementById('input-hint');
+    const sigil = document.getElementById('sigil');
+    const panel = document.getElementById('unlock-panel');
+    const footerStatus = document.getElementById('footer-status');
+
+    function render() {
+      const masked = '·'.repeat(typed.length);
+      display.innerHTML = masked + '<span class="cursor"></span>';
+    }
+
+    function showError(msg) {
+      hint.textContent = msg;
+      hint.classList.add('error');
+      sigil.classList.add('glitch');
+      setTimeout(() => {
+        sigil.classList.remove('glitch');
+        hint.classList.remove('error');
+        hint.textContent = 'TYPE TO BEGIN — NO FIELD TO CLICK';
+      }, 1800);
+    }
+
+    async function verify() {
+      if (verifying || typed.length === 0) return;
+      verifying = true;
+      hint.textContent = '';
+
+      const verifyingEl = document.createElement('div');
+      verifyingEl.className = 'verifying dot-pulse';
+      verifyingEl.textContent = 'VERIFYING';
+      hint.after(verifyingEl);
+      footerStatus.textContent = 'CHECKING PASSPHRASE';
+
+      try {
+        const res = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passphrase: typed }),
+        });
+
+        verifyingEl.remove();
+
+        if (res.ok) {
+          const data = await res.json();
+          localStorage.setItem('nw_token', data.token);
+          localStorage.setItem('nw_tier', data.tier);
+          localStorage.setItem('nw_designation', data.designation);
+
+          // Show unlock panel
+          document.getElementById('unlock-tier').textContent = `CLEARANCE TIER ${data.tier} — CONFIRMED`;
+          document.getElementById('unlock-designation').textContent = data.designation;
+          document.getElementById('unlock-desc').textContent = data.description;
+          panel.classList.add('visible');
+          sigil.classList.add('unlocked');
+          footerStatus.textContent = `TIER ${data.tier} ACCESS GRANTED`;
+          hint.textContent = 'PASSPHRASE ACCEPTED';
+          unlocked = true;
+        } else {
+          showError('PASSPHRASE NOT RECOGNISED — ACCESS DENIED');
+          footerStatus.textContent = 'ACCESS DENIED';
+          typed = '';
+          render();
+        }
+      } catch (e) {
+        verifyingEl.remove();
+        showError('CONNECTION FAILURE — RETRY');
+        footerStatus.textContent = 'CONNECTION ERROR';
+        typed = '';
+        render();
+      }
+
+      verifying = false;
+    }
+
+    function goToVault() {
+      window.location.href = '/vault/index.html';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (unlocked || verifying) return;
+      if (e.key === 'Enter') {
+        verify();
+        return;
+      }
+      if (e.key === 'Backspace') {
+        typed = typed.slice(0, -1);
+        render();
+        return;
+      }
+      if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+        typed += e.key.toLowerCase();
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

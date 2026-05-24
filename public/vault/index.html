@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAULT — PROJECT NULLWARD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Libre+Baskerville:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #0e0e10;
+      --border: rgba(255,255,255,0.06);
+      --border-mid: rgba(255,255,255,0.12);
+      --text-primary: #c8c8cc;
+      --text-secondary: #5a5a60;
+      --text-tertiary: #2e2e33;
+      --accent: #8a7a6a;
+      --accent-dim: #3a342e;
+      --mono: 'Share Tech Mono', monospace;
+      --serif: 'Libre Baskerville', serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+      pointer-events: none;
+      z-index: 100;
+    }
+    header {
+      padding: 28px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .org-id { font-size: 11px; letter-spacing: 0.18em; color: var(--text-secondary); }
+    .org-id span { color: var(--text-tertiary); margin-right: 10px; }
+    .header-right { display: flex; gap: 32px; align-items: center; }
+    nav { display: flex; gap: 32px; }
+    nav a { font-size: 11px; letter-spacing: 0.12em; color: var(--text-tertiary); text-decoration: none; transition: color 0.2s; }
+    nav a:hover { color: var(--text-secondary); }
+    nav a.active { color: var(--text-secondary); }
+    .tier-badge {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      padding: 4px 12px;
+      border: 1px solid var(--accent-dim);
+      color: var(--accent);
+    }
+
+    /* Access denied state */
+    #denied-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      text-align: center;
+    }
+
+    .denied-code {
+      font-size: 60px;
+      letter-spacing: 0.04em;
+      color: var(--text-tertiary);
+      margin-bottom: 20px;
+      line-height: 1;
+    }
+
+    .denied-msg {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+    }
+
+    .denied-link {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      border-bottom: 1px solid var(--text-tertiary);
+      padding-bottom: 2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .denied-link:hover { color: var(--text-secondary); border-color: var(--text-secondary); }
+
+    /* Vault content state */
+    #vault-state { display: none; flex: 1; flex-direction: column; }
+    #vault-state.visible { display: flex; }
+
+    .vault-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      flex: 1;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 32px 24px;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--text-tertiary);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-item {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: color 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sidebar-item:hover { color: var(--text-secondary); }
+    .sidebar-item.active { color: var(--accent); }
+    .sidebar-item.locked { opacity: 0.3; cursor: default; }
+    .sidebar-item .lock { font-size: 9px; color: var(--text-tertiary); }
+
+    .sidebar-tier-req {
+      font-size: 9px;
+      color: var(--text-tertiary);
+    }
+
+    /* Main content area */
+    .vault-content {
+      padding: 40px 48px;
+      overflow-y: auto;
+    }
+
+    .content-section { display: none; }
+    .content-section.visible { display: block; }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      color: var(--text-tertiary);
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .doc-block {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 24px 28px;
+      margin-bottom: 20px;
+    }
+
+    .doc-id {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+
+    .doc-title {
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .doc-body {
+      font-size: 12px;
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--text-secondary);
+      line-height: 2;
+    }
+
+    .doc-body .redacted {
+      background: var(--text-tertiary);
+      color: transparent;
+      user-select: none;
+      padding: 0 3px;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .file-card {
+      border: 1px solid var(--border);
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .file-card:hover { border-color: var(--accent-dim); background: rgba(138,122,106,0.03); }
+
+    .file-name {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .file-meta {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+    }
+
+    footer {
+      padding: 20px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+    }
+    footer span { font-size: 10px; letter-spacing: 0.12em; color: var(--text-tertiary); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="org-id"><span>REF:</span>PROJECT NULLWARD — SECURE VAULT</div>
+    <div class="header-right">
+      <nav>
+        <a href="../index.html">ENTRY</a>
+        <a href="../cipher/index.html">CIPHER</a>
+        <a href="index.html" class="active">VAULT</a>
+      </nav>
+      <div class="tier-badge" id="tier-badge" style="display:none"></div>
+    </div>
+  </header>
+
+  <!-- Access denied -->
+  <div id="denied-state">
+    <div class="denied-code">401</div>
+    <div class="denied-msg">CLEARANCE NOT ESTABLISHED</div>
+    <a href="../index.html" class="denied-link">RETURN TO ENTRY PORTAL</a>
+  </div>
+
+  <!-- Vault -->
+  <div id="vault-state">
+    <div class="vault-layout">
+      <div class="sidebar">
+        <div class="sidebar-label">SECTIONS</div>
+        <div class="sidebar-item active" data-section="overview" onclick="showSection('overview', this)">
+          OVERVIEW
+        </div>
+        <div class="sidebar-item" data-section="directives" data-tier="1" onclick="handleNav('directives', 1, this)">
+          DIRECTIVES <span class="sidebar-tier-req">T1+</span>
+        </div>
+        <div class="sidebar-item" data-section="fieldops" data-tier="3" onclick="handleNav('fieldops', 3, this)">
+          FIELD OPS <span class="sidebar-tier-req">T3+</span>
+        </div>
+        <div class="sidebar-item" data-section="archive" data-tier="5" onclick="handleNav('archive', 5, this)">
+          ARCHIVE <span class="sidebar-tier-req">T5+</span>
+        </div>
+        <div class="sidebar-item" data-section="architect" data-tier="6" onclick="handleNav('architect', 6, this)">
+          ARCHITECT <span class="sidebar-tier-req">T6</span>
+        </div>
+      </div>
+
+      <div class="vault-content">
+
+        <!-- Overview — all tiers -->
+        <div class="content-section visible" id="section-overview">
+          <div class="section-label">DOCUMENT NW-V-000 — VAULT INDEX</div>
+          <div class="section-title">WELCOME, <span id="designation-display"></span></div>
+          <div class="doc-block">
+            <div class="doc-id">NW-001 / ORIENTATION</div>
+            <div class="doc-title">ON THE NATURE OF THIS ARCHIVE</div>
+            <p class="doc-body">
+              This vault contains operational documentation, field records, and
+              historical files pertaining to PROJECT NULLWARD. Access is tiered.
+              Documents above your clearance level are not visible — they do not
+              exist to you. This is not a restriction. This is the architecture.
+              <br><br>
+              You have been verified. You are expected to behave accordingly.
+              <br><br>
+              If you believe you have reached this tier in error, you have not.
+            </p>
+          </div>
+          <div class="doc-block">
+            <div class="doc-id">NW-002 / CLEARANCE MAP</div>
+            <div class="doc-title">STRUCTURE OF ACCESS</div>
+            <p class="doc-body" id="clearance-map-text"></p>
+          </div>
+        </div>
+
+        <!-- Directives — tier 1+ -->
+        <div class="content-section" id="section-directives">
+          <div class="section-label">TIER 1+ — ACTIVE DIRECTIVES</div>
+          <div class="section-title">CURRENT DIRECTIVES</div>
+          <div class="doc-block">
+            <div class="doc-id">DIR-0041 / ACTIVE</div>
+            <div class="doc-title">DIRECTIVE: MAINTAIN SILENCE</div>
+            <p class="doc-body">
+              All NULLWARD personnel are reminded that external discussion
+              of operational matters constitutes a breach of <span class="redacted">████████████</span> protocol.
+              This directive supersedes all prior communications guidance.
+              Effective immediately and until further notice.
+              <br><br>
+              Violations are handled internally.
+            </p>
+          </div>
+          <div class="doc-block">
+            <div class="doc-id">DIR-0038 / ACTIVE</div>
+            <div class="doc-title">DIRECTIVE: TIER ADVANCEMENT</div>
+            <p class="doc-body">
+              Advancement through NULLWARD clearance tiers is achieved through
+              the cipher system. No other pathway exists. Requests for
+              accelerated advancement are not acknowledged.
+              <br><br>
+              The cipher is not a test. It is a filter.
+            </p>
+          </div>
+        </div>
+
+        <!-- Field Ops — tier 3+ -->
+        <div class="content-section" id="section-fieldops">
+          <div class="section-label">TIER 3+ — FIELD OPERATIONS</div>
+          <div class="section-title">FIELD OPERATION RECORDS</div>
+          <div class="doc-block">
+            <div class="doc-id">FIELDOP-017 / PARTIAL RELEASE</div>
+            <div class="doc-title">OPERATION <span class="redacted">████████</span> — DEBRIEF SUMMARY</div>
+            <p class="doc-body">
+              Subject was located at coordinates <span class="redacted">██.████N, ██.████W</span>.
+              Extraction team <span class="redacted">████</span> arrived at <span class="redacted">██:██</span>.
+              Subject was uncooperative. Outcome: <span class="redacted">████████████████████</span>.
+              <br><br>
+              Operator on record: <span class="redacted">████████</span>.
+              Filed under NW-ARCHIVE-<span class="redacted">███</span>.
+            </p>
+          </div>
+          <div class="doc-block">
+            <div class="doc-id">FIELDOP-022 / ACTIVE</div>
+            <div class="doc-title">STANDING PROTOCOL: WARDEN DEPLOYMENT</div>
+            <p class="doc-body">
+              Warden units may be deployed at ARCHITECT discretion.
+              Operators are not briefed in advance of Warden presence.
+              If a Warden arrives at your location, you are to cease
+              current activities and await instruction.
+              <br><br>
+              Do not ask why.
+            </p>
+          </div>
+        </div>
+
+        <!-- Archive — tier 5+ -->
+        <div class="content-section" id="section-archive">
+          <div class="section-label">TIER 5+ — RESTRICTED ARCHIVE</div>
+          <div class="section-title">HISTORICAL RECORD</div>
+          <div class="doc-block">
+            <div class="doc-id">ARCHIVE-001 / ORIGIN</div>
+            <div class="doc-title">THE FOUNDING OF PROJECT NULLWARD</div>
+            <p class="doc-body">
+              PROJECT NULLWARD was established in <span class="redacted">████</span> following the
+              <span class="redacted">████████████████████████</span> incident. The founding directive was
+              simple: contain what cannot be destroyed. Catalogue what cannot
+              be understood. Ignore what cannot be catalogued.
+              <br><br>
+              The original NULL designation — Tier 7 — was occupied by
+              <span class="redacted">███</span> individuals. Current occupancy is <span class="redacted">█████████</span>.
+              <br><br>
+              This file is complete. What has been removed was removed
+              by authorised personnel. There is nothing missing.
+            </p>
+          </div>
+          <div class="file-grid">
+            <div class="file-card">
+              <div class="file-name">NW-FOUNDING-CHARTER.enc</div>
+              <div class="file-meta">ENCRYPTED — ARCHITECT KEY REQUIRED</div>
+            </div>
+            <div class="file-card">
+              <div class="file-name">INCIDENT-REPORT-000.redacted</div>
+              <div class="file-meta">PARTIAL — 94% REDACTED</div>
+            </div>
+            <div class="file-card">
+              <div class="file-name">PERSONNEL-ORIGINAL.sealed</div>
+              <div class="file-meta">SEALED — NULL AUTHORISATION ONLY</div>
+            </div>
+            <div class="file-card">
+              <div class="file-name">CIPHER-GENESIS.log</div>
+              <div class="file-meta">AVAILABLE — 14KB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architect — tier 6 only -->
+        <div class="content-section" id="section-architect">
+          <div class="section-label">TIER 6 — ARCHITECT CLEARANCE</div>
+          <div class="section-title">STRUCTURAL AUTHORITY</div>
+          <div class="doc-block">
+            <div class="doc-id">ARCH-001 / EYES ONLY</div>
+            <div class="doc-title">ON THE NATURE OF NULL</div>
+            <p class="doc-body">
+              You have reached the boundary. What lies beyond is not hidden
+              from you as a restriction — it is hidden from you because
+              the concept of "you" does not apply at Tier 7.
+              <br><br>
+              NULL is not a person. NULL is not a group.
+              NULL is the state to which NULLWARD moves.
+              The project's name has always described its destination.
+              <br><br>
+              Your role as ARCHITECT is to maintain the systems that
+              make the movement possible. You do not need to understand
+              the destination. You only need to ensure nothing stops the travel.
+              <br><br>
+              There are <span class="redacted">█</span> other ARCHITECTs. You will never meet them.
+              This is by design.
+            </p>
+          </div>
+          <div class="doc-block">
+            <div class="doc-id">ARCH-002 / DIRECTIVE AUTHORITY</div>
+            <div class="doc-title">YOUR PERMISSIONS</div>
+            <p class="doc-body">
+              As ARCHITECT you may: assign Warden deployments, issue Directives
+              (DIR-series), access all field operation records unredacted,
+              and view the complete personnel register below Tier 6.
+              <br><br>
+              You may not: access Tier 7 records, modify the cipher system,
+              or contact other ARCHITECTs through NULLWARD channels.
+              <br><br>
+              If you believe you require NULL-level access, you are mistaken.
+              No one who requires it has ever asked.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>NW-VAULT / SECURE ACCESS TERMINAL</span>
+    <span id="vault-footer-status">CHECKING CLEARANCE</span>
+  </footer>
+
+  <script>
+    let userTier = 0;
+
+    async function init() {
+      const token = localStorage.getItem('nw_token');
+      const footerStatus = document.getElementById('vault-footer-status');
+
+      if (!token) {
+        showDenied();
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/validate', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) { showDenied(); return; }
+
+        const data = await res.json();
+        if (!data.valid) { showDenied(); return; }
+
+        userTier = data.tier;
+        showVault(data.tier, data.designation);
+        footerStatus.textContent = `TIER ${data.tier} — ${data.designation} — SESSION ACTIVE`;
+      } catch (e) {
+        showDenied();
+      }
+    }
+
+    function showDenied() {
+      document.getElementById('denied-state').style.display = 'flex';
+      document.getElementById('vault-state').classList.remove('visible');
+      document.getElementById('vault-footer-status').textContent = 'ACCESS DENIED';
+    }
+
+    function showVault(tier, designation) {
+      document.getElementById('denied-state').style.display = 'none';
+      document.getElementById('vault-state').classList.add('visible');
+
+      // Badge
+      const badge = document.getElementById('tier-badge');
+      badge.textContent = `T${tier} — ${designation}`;
+      badge.style.display = 'block';
+
+      // Designation in overview
+      document.getElementById('designation-display').textContent = designation;
+
+      // Lock sidebar items above tier
+      document.querySelectorAll('.sidebar-item[data-tier]').forEach(item => {
+        const required = parseInt(item.dataset.tier);
+        if (tier < required) {
+          item.classList.add('locked');
+        }
+      });
+
+      // Clearance map
+      const tiers = [
+        { t: 1, name: 'WITNESS', desc: 'Read-only — directives and communications.' },
+        { t: 2, name: 'RUNNER', desc: 'Internal correspondence access.' },
+        { t: 3, name: 'OPERATOR', desc: 'Field operations — partial context.' },
+        { t: 4, name: 'WARDEN', desc: 'Combat clearance — force authorised.' },
+        { t: 5, name: 'ARCHIVIST', desc: 'Full archive — historical record.' },
+        { t: 6, name: 'ARCHITECT', desc: 'Structural authority — directive power.' },
+        { t: 7, name: 'NULL', desc: '███████████████████████████████' },
+      ];
+
+      const mapEl = document.getElementById('clearance-map-text');
+      mapEl.innerHTML = tiers.map(r => {
+        const active = r.t === tier;
+        const accessible = r.t <= tier;
+        const color = active ? 'var(--accent)' : accessible ? 'var(--text-secondary)' : 'var(--text-tertiary)';
+        return `<span style="display:block; margin-bottom: 6px; color: ${color};">
+          TIER ${r.t} — ${r.name}${active ? ' [YOU]' : ''} — ${accessible ? r.desc : '██████████████████████'}
+        </span>`;
+      }).join('');
+    }
+
+    function showSection(id, el) {
+      document.querySelectorAll('.content-section').forEach(s => s.classList.remove('visible'));
+      document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+      document.getElementById(`section-${id}`).classList.add('visible');
+      el.classList.add('active');
+    }
+
+    function handleNav(id, requiredTier, el) {
+      if (userTier < requiredTier) return;
+      showSection(id, el);
+    }
+
+    init();
+  </script>
+</body>
+</html>
